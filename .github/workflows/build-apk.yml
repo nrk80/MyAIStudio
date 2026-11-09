@@ -24,23 +24,12 @@ jobs:
           unzip -q gradle-8.9-bin.zip -d "$HOME/gradle"
           echo "$HOME/gradle/gradle-8.9/bin" >> "$GITHUB_PATH"
 
-      - name: Extract Android project
+      - name: Extract Android project only
         run: |
           mkdir -p source
-          FOUND=0
-          for ZIP_FILE in ./*.zip; do
-            [ -f "$ZIP_FILE" ] || continue
-            echo "Extracting: $ZIP_FILE"
-            unzip -oq "$ZIP_FILE" -d source
-            FOUND=1
-          done
-          if [ "$FOUND" -eq 0 ]; then
-            echo "No ZIP files found"
-            ls -la
-            exit 1
-          fi
-          echo "Extracted project files:"
-          find source -maxdepth 5 -type f | head -100
+          unzip -oq MyAIStudio_Android_v1_phone_build.zip -d source
+          test -f source/MyAIStudio_Android_v1/settings.gradle.kts
+          echo "Android project extracted successfully"
 
       - name: Inspect Android compatibility settings
         run: |
@@ -50,34 +39,18 @@ jobs:
           cat source/MyAIStudio_Android_v1/app/build.gradle.kts
           echo "===== root build.gradle.kts ====="
           cat source/MyAIStudio_Android_v1/build.gradle.kts
-          echo "===== gradle.properties ====="
-          cat source/MyAIStudio_Android_v1/gradle.properties
 
       - name: Build APK
         run: |
-          PROJECT_FILE="$(find source -type f \\( -name settings.gradle.kts -o -name settings.gradle \\) -print -quit)"
-          if [ -z "$PROJECT_FILE" ]; then
-            echo "Android project settings file not found"
-            find source -type f
-            exit 1
-          fi
-
-          PROJECT_DIR="$(dirname "$PROJECT_FILE")"
-          echo "Android project: $PROJECT_DIR"
-          cd "$PROJECT_DIR"
-
+          cd source/MyAIStudio_Android_v1
           sed -i 's/JavaVersion.VERSION_1_8/JavaVersion.VERSION_17/g' app/build.gradle.kts
           sed -i 's/jvmTarget = "1.8"/jvmTarget = "17"/g' app/build.gradle.kts
-
-          printf '\\n// Keep Java and Kotlin bytecode targets aligned.\\ntasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {\\n    sourceCompatibility = "17"\\n    targetCompatibility = "17"\\n}\\n' >> app/build.gradle.kts
-
           gradle --no-daemon -Pkotlin.jvm.target.validation.mode=warning :app:assembleDebug
 
       - name: Verify APK package, SDK levels and signature
         run: |
-          APK_PATH="$(find source -type f -path '*/app/build/outputs/apk/debug/app-debug.apk' -print -quit)"
-          if [ -z "$APK_PATH" ]; then echo "APK not found"; exit 1; fi
-          echo "APK_PATH=$APK_PATH"
+          APK_PATH="source/MyAIStudio_Android_v1/app/build/outputs/apk/debug/app-debug.apk"
+          test -f "$APK_PATH"
           BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
           echo "===== APK badging ====="
           "$BUILD_TOOLS/aapt" dump badging "$APK_PATH" | head -25
@@ -90,5 +63,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: MyAIStudio-debug-apk
-          path: source/**/app/build/outputs/apk/debug/app-debug.apk
+          path: source/MyAIStudio_Android_v1/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
