@@ -28,29 +28,37 @@ jobs:
 
       - name: Extract Android project
         run: |
-          ZIP_FILE="$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)"
-          if [ -z "$ZIP_FILE" ]; then
-            echo "No ZIP file found"
+          mkdir -p source
+          FOUND=0
+          for ZIP_FILE in ./*.zip; do
+            [ -f "$ZIP_FILE" ] || continue
+            echo "Extracting: $ZIP_FILE"
+            unzip -oq "$ZIP_FILE" -d source
+            FOUND=1
+          done
+          if [ "$FOUND" -eq 0 ]; then
+            echo "No ZIP files found"
             ls -la
             exit 1
           fi
-          unzip -q "$ZIP_FILE" -d source
+          echo "Extracted project files:"
+          find source -maxdepth 5 -type f | head -100
 
       - name: Build APK
         run: |
-          PROJECT_FILE="$(find source -type f -name settings.gradle.kts -print -quit)"
+          PROJECT_FILE="$(find source -type f \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit)"
           if [ -z "$PROJECT_FILE" ]; then
-            echo "Android project not found"
+            echo "Android project settings file not found"
+            find source -type f
             exit 1
           fi
+
           PROJECT_DIR="$(dirname "$PROJECT_FILE")"
+          echo "Android project: $PROJECT_DIR"
           cd "$PROJECT_DIR"
 
-          sed -i '/^android {/a\
-              compileOptions {\
-                  sourceCompatibility = JavaVersion.VERSION_17\
-                  targetCompatibility = JavaVersion.VERSION_17\
-              }' app/build.gradle.kts
+          sed -i 's/JavaVersion.VERSION_1_8/JavaVersion.VERSION_17/g' app/build.gradle.kts
+          sed -i 's/jvmTarget = "1.8"/jvmTarget = "17"/g' app/build.gradle.kts
 
           gradle --no-daemon :app:assembleDebug
 
