@@ -44,6 +44,17 @@ jobs:
           echo "Extracted project files:"
           find source -maxdepth 5 -type f | head -100
 
+      - name: Inspect Android compatibility settings
+        run: |
+          echo "===== AndroidManifest.xml ====="
+          cat source/MyAIStudio_Android_v1/app/src/main/AndroidManifest.xml
+          echo "===== app/build.gradle.kts ====="
+          cat source/MyAIStudio_Android_v1/app/build.gradle.kts
+          echo "===== root build.gradle.kts ====="
+          cat source/MyAIStudio_Android_v1/build.gradle.kts
+          echo "===== gradle.properties ====="
+          cat source/MyAIStudio_Android_v1/gradle.properties
+
       - name: Build APK
         run: |
           PROJECT_FILE="$(find source -type f \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit)"
