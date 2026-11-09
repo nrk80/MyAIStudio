@@ -1,3 +1,5 @@
+
+
 name: Build My AI Studio APK
 
 on:
@@ -25,16 +27,36 @@ jobs:
           echo "$HOME/gradle/gradle-8.9/bin" >> "$GITHUB_PATH"
 
       - name: Extract Android project
-        run: unzip -q MyAIStudio_Android_v1_phone_build.zip -d source
+        run: |
+          ZIP_FILE="$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)"
+          if [ -z "$ZIP_FILE" ]; then
+            echo "No ZIP file found"
+            ls -la
+            exit 1
+          fi
+          unzip -q "$ZIP_FILE" -d source
 
       - name: Build APK
         run: |
-          cd source/MyAIStudio_Android_v1
+          PROJECT_FILE="$(find source -type f -name settings.gradle.kts -print -quit)"
+          if [ -z "$PROJECT_FILE" ]; then
+            echo "Android project not found"
+            exit 1
+          fi
+          PROJECT_DIR="$(dirname "$PROJECT_FILE")"
+          cd "$PROJECT_DIR"
+
+          sed -i '/^android {/a\
+              compileOptions {\
+                  sourceCompatibility = JavaVersion.VERSION_17\
+                  targetCompatibility = JavaVersion.VERSION_17\
+              }' app/build.gradle.kts
+
           gradle --no-daemon :app:assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: MyAIStudio-debug-apk
-          path: source/MyAIStudio_Android_v1/app/build/outputs/apk/debug/app-debug.apk
-          
+          path: source/**/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
