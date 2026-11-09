@@ -1,0 +1,40 @@
+name: Build My AI Studio APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Gradle 8.9
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
+          unzip -q gradle-8.9-bin.zip -d "$HOME/gradle"
+          echo "$HOME/gradle/gradle-8.9/bin" >> "$GITHUB_PATH"
+
+      - name: Extract Android project
+        run: unzip -q MyAIStudio_Android_v1_phone_build.zip -d source
+
+      - name: Build APK
+        run: |
+          cd source/MyAIStudio_Android_v1
+          gradle --no-daemon :app:assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyAIStudio-debug-apk
+          path: source/MyAIStudio_Android_v1/app/build/outputs/apk/debug/app-debug.apk
+          
