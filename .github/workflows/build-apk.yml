@@ -1,5 +1,3 @@
-
-
 name: Build My AI Studio APK
 
 on:
@@ -57,7 +55,7 @@ jobs:
 
       - name: Build APK
         run: |
-          PROJECT_FILE="$(find source -type f \( -name settings.gradle.kts -o -name settings.gradle \) -print -quit)"
+          PROJECT_FILE="$(find source -type f \\( -name settings.gradle.kts -o -name settings.gradle \\) -print -quit)"
           if [ -z "$PROJECT_FILE" ]; then
             echo "Android project settings file not found"
             find source -type f
@@ -71,8 +69,7 @@ jobs:
           sed -i 's/JavaVersion.VERSION_1_8/JavaVersion.VERSION_17/g' app/build.gradle.kts
           sed -i 's/jvmTarget = "1.8"/jvmTarget = "17"/g' app/build.gradle.kts
 
-          # Force Java compile tasks to target JVM 17, matching Kotlin.
-          printf '\n// Keep Java and Kotlin bytecode targets aligned.\ntasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {\n    sourceCompatibility = "17"\n    targetCompatibility = "17"\n}\n' >> app/build.gradle.kts
+          printf '\\n// Keep Java and Kotlin bytecode targets aligned.\\ntasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {\\n    sourceCompatibility = "17"\\n    targetCompatibility = "17"\\n}\\n' >> app/build.gradle.kts
 
           gradle --no-daemon -Pkotlin.jvm.target.validation.mode=warning :app:assembleDebug
 
@@ -87,12 +84,7 @@ jobs:
           echo "===== APK signature verification ====="
           "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK_PATH"
           echo "===== APK native libraries ====="
-          unzip -l "$APK_PATH" | grep -E 'lib/|\.so        uses: actions/upload-artifact@v4
-        with:
-          name: MyAIStudio-debug-apk
-          path: source/**/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
- || true
+          unzip -l "$APK_PATH" | grep 'lib/' || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
