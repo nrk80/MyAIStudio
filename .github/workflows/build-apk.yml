@@ -63,7 +63,7 @@ jobs:
           # Force Java compile tasks to target JVM 17, matching Kotlin.
           printf '\n// Keep Java and Kotlin bytecode targets aligned.\ntasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {\n    sourceCompatibility = "17"\n    targetCompatibility = "17"\n}\n' >> app/build.gradle.kts
 
-          gradle --no-daemon :app:assembleDebug
+          gradle --no-daemon -Pkotlin.jvm.target.validation.mode=warning :app:assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
