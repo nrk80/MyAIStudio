@@ -60,6 +60,9 @@ jobs:
           sed -i 's/JavaVersion.VERSION_1_8/JavaVersion.VERSION_17/g' app/build.gradle.kts
           sed -i 's/jvmTarget = "1.8"/jvmTarget = "17"/g' app/build.gradle.kts
 
+          # Force Java compile tasks to target JVM 17, matching Kotlin.
+          printf '\n// Keep Java and Kotlin bytecode targets aligned.\ntasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {\n    sourceCompatibility = "17"\n    targetCompatibility = "17"\n}\n' >> app/build.gradle.kts
+
           gradle --no-daemon :app:assembleDebug
 
       - name: Upload APK
